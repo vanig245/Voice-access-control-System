@@ -48,7 +48,7 @@ def predict():
 
         features = extract_features(wav_path)
         if features is None:
-            return "⚠️ Error processing audio features"
+            return "Error processing audio features"
 
         features = features.reshape(1, -1)
         prediction = model.predict(features)[0]
@@ -59,7 +59,7 @@ def predict():
             return "❌ Access Denied"
     except Exception as e:
         print("Prediction error:", e)
-        return f"⚠️ Error: {str(e)}"
+        return f"Error: {str(e)}"
 
 
 
