@@ -120,7 +120,7 @@ Open your browser → `http://127.0.0.1:5000`
 2. Click Start Recording
 3. Speak clearly for 3 seconds
 4. Wait for the result:
-   - Access Granted — your voice matched an authorized user
+   - **Access Granted** — your voice matched an authorized user
    - **Access Denied** — voice not recognized
 
 ---
