@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Voice Access Control</title>
+    <style>
+        :root {
+            --bg-light: linear-gradient(to right, #74ebd5, #9face6);
+            --bg-dark: #1e1e1e;
+            --text-light: #333;
+            --text-dark: #f0f0f0;
+            --box-light: #ffffffc9;
+            --box-dark: #2e2e2e;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            text-align: center;
+            transition: background 0.3s, color 0.3s;
+        }
+
+        body.light-mode {
+            background: var(--bg-light);
+            color: var(--text-light);
+        }
+
+        body.dark-mode {
+            background: var(--bg-dark);
+            color: var(--text-dark);
+        }
+
+        .container {
+            background: var(--box-light);
+            padding: 40px 60px;
+            border-radius: 20px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+            transition: background 0.3s, color 0.3s;
+        }
+
+        body.dark-mode .container {
+            background: var(--box-dark);
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 30px;
+        }
+
+        button {
+            padding: 12px 25px;
+            font-size: 1rem;
+            border: none;
+            border-radius: 8px;
+            margin: 10px;
+            background-color: #4CAF50;
+            color: white;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        #result {
+            margin-top: 20px;
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+
+        #spinner {
+            margin-top: 15px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #4CAF50;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            display: none;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .voice-wave {
+            margin: 20px auto;
+            width: 80px;
+            height: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+        }
+
+        .bar {
+            width: 6px;
+            height: 10px;
+            background: #4CAF50;
+            animation: wave 1s infinite;
+        }
+
+        .bar:nth-child(2) { animation-delay: 0.1s; }
+        .bar:nth-child(3) { animation-delay: 0.2s; }
+        .bar:nth-child(4) { animation-delay: 0.3s; }
+        .bar:nth-child(5) { animation-delay: 0.4s; }
+
+        @keyframes wave {
+            0%, 100% { height: 10px; }
+            50% { height: 30px; }
+        }
+
+        #themeToggle {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background-color: #333;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            padding: 10px;
+            font-size: 1.2rem;
+            cursor: pointer;
+        }
+
+        body.light-mode #themeToggle {
+            background-color: #f0f0f0;
+            color: #333;
+        }
+    </style>
+</head>
+<body class="light-mode">
+    <button id="themeToggle" onclick="toggleTheme()">🌙</button>
+
+    <div class="container">
+        <h1>🎙️ Speak to Unlock</h1>
+        <button onclick="startRecording()">Start Recording</button>
+        
+        <div class="voice-wave" id="waveAnimation" style="display: none;">
+            <div class="bar"></div>
+            <div class="bar"></div>
+            <div class="bar"></div>
+            <div class="bar"></div>
+            <div class="bar"></div>
+        </div>
+
+        <div id="spinner"></div>
+        <p id="result"></p>
+    </div>
+
+    <script>
+        let mediaRecorder;
+        let audioChunks = [];
+
+        async function startRecording() {
+            document.getElementById("result").innerText = "";
+            document.getElementById("spinner").style.display = "none";
+            document.getElementById("waveAnimation").style.display = "flex";
+
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            mediaRecorder = new MediaRecorder(stream);
+
+            mediaRecorder.start();
+            audioChunks = [];
+
+            mediaRecorder.ondataavailable = event => {
+                audioChunks.push(event.data);
+            };
+
+            mediaRecorder.onstop = async () => {
+                document.getElementById("waveAnimation").style.display = "none";
+                document.getElementById("spinner").style.display = "block";
+
+                const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                const formData = new FormData();
+                formData.append("audio", audioBlob, "recorded.webm");
+
+                const response = await fetch("/predict", {
+                    method: "POST",
+                    body: formData
+                });
+
+                const result = await response.text();
+                document.getElementById("spinner").style.display = "none";
+                document.getElementById("result").innerText = result;
+            };
+
+            setTimeout(() => {
+                mediaRecorder.stop();
+            }, 3000); // 3 seconds
+        }
+
+        function toggleTheme() {
+            const body = document.body;
+            const toggle = document.getElementById("themeToggle");
+
+            if (body.classList.contains("light-mode")) {
+                body.classList.remove("light-mode");
+                body.classList.add("dark-mode");
+                toggle.innerText = "☀️";
+            } else {
+                body.classList.remove("dark-mode");
+                body.classList.add("light-mode");
+                toggle.innerText = "🌙";
+            }
+        }
+    </script>
+</body>
+</html>
