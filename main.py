@@ -32,4 +32,4 @@ model.fit(X_train, y_train)
 with open("voice_model.pkl", "wb") as f:
     pickle.dump(model, f)
 
-print("✅ Model trained and saved as voice_model.pkl")
+print("Model trained and saved as voice_model.pkl")
